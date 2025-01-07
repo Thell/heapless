@@ -440,8 +440,11 @@ where
             while child < end {
                 let right = child + 1;
                 // compare with the greater of the two children
-                if right < end && hole.get(child).cmp(hole.get(right)) != K::ordering() {
+                if right < end && hole.get(right).cmp(hole.get(child)) == K::ordering() {
                     child = right;
+                }
+                if hole.get(child).cmp(hole.element()) != K::ordering() {
+                    break;
                 }
                 hole.move_to(child);
                 child = 2 * hole.pos() + 1;
@@ -796,6 +799,108 @@ mod tests {
         assert_eq!(heap.pop(), Some(7));
         assert_eq!(heap.pop(), Some(10));
         assert_eq!(heap.pop(), None);
+    }
+
+    #[test]
+    fn min2() {
+        use std::cmp::Ordering;
+
+        #[derive(Debug)]
+        struct MyPair<T, U> {
+            first: T,
+            _second: U,
+        }
+
+        // Manually implement PartialEq to compare only the `first` field.
+        impl<T: PartialEq, U> PartialEq for MyPair<T, U> {
+            fn eq(&self, other: &Self) -> bool {
+                self.first == other.first
+            }
+        }
+
+        // Manually implement Eq since it is required by Ord and doesn't impose additional constraints.
+        impl<T: Eq, U> Eq for MyPair<T, U> {}
+
+        // Manually implement PartialOrd to compare only the `first` field.
+        impl<T: PartialOrd, U> PartialOrd for MyPair<T, U> {
+            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+                self.first.partial_cmp(&other.first)
+            }
+        }
+
+        // Manually implement Ord to compare only the `first` field.
+        impl<T: Ord, U> Ord for MyPair<T, U> {
+            fn cmp(&self, other: &Self) -> Ordering {
+                self.first.cmp(&other.first)
+            }
+        }
+
+        let frequencies: [MyPair<u8, _>; 12] = [
+            MyPair {
+                first: 6,
+                _second: 45,
+            },
+            MyPair {
+                first: 11,
+                _second: 48,
+            },
+            MyPair {
+                first: 3,
+                _second: 49,
+            },
+            MyPair {
+                first: 1,
+                _second: 50,
+            },
+            MyPair {
+                first: 2,
+                _second: 51,
+            },
+            MyPair {
+                first: 1,
+                _second: 52,
+            },
+            MyPair {
+                first: 6,
+                _second: 53,
+            },
+            MyPair {
+                first: 2,
+                _second: 54,
+            },
+            MyPair {
+                first: 2,
+                _second: 55,
+            },
+            MyPair {
+                first: 3,
+                _second: 56,
+            },
+            MyPair {
+                first: 1,
+                _second: 57,
+            },
+            MyPair {
+                first: 2,
+                _second: 124,
+            },
+        ];
+        let mut heap = BinaryHeap::<MyPair<u8, _>, Min, 12>::new();
+        for freq in frequencies {
+            heap.push(freq).unwrap();
+        }
+        assert_eq!(heap.pop().unwrap()._second, 50);
+        assert_eq!(heap.pop().unwrap()._second, 57);
+        assert_eq!(heap.pop().unwrap()._second, 52);
+        assert_eq!(heap.pop().unwrap()._second, 54);
+        assert_eq!(heap.pop().unwrap()._second, 55);
+        assert_eq!(heap.pop().unwrap()._second, 51);
+        assert_eq!(heap.pop().unwrap()._second, 124);
+        assert_eq!(heap.pop().unwrap()._second, 56);
+        assert_eq!(heap.pop().unwrap()._second, 49);
+        assert_eq!(heap.pop().unwrap()._second, 53);
+        assert_eq!(heap.pop().unwrap()._second, 45);
+        assert_eq!(heap.pop().unwrap()._second, 48);
     }
 
     #[test]
